@@ -100,13 +100,13 @@ class AlluvialTool:
     def get_ordered_label_groups(self, src_label_override=None, dst_label_override=None, **kwargs):
         # TODO: Remove code duplication from creation of src, dst lists
         _ = kwargs
-
-        src_ordered_labels = src_label_override if src_label_override else sorted(
-            {src_item for src_item in self.input_data_dict}, key=lambda x: self.item_width_dict[x])
+        
+            
+        src_ordered_labels = src_label_override if src_label_override else list(self.input_data_dict.keys())[::-1]
 
         dst_ordered_labels = dst_label_override if dst_label_override else sorted(
             {dst_item for dst_item_counter in self.input_data_dict.values() for dst_item in dst_item_counter},
-            key=lambda x: self.item_width_dict[x])
+            key=lambda x: list(self.input_data_dict.values())[0].get(x, float('inf')))
 
         return src_ordered_labels, dst_ordered_labels
 
@@ -178,7 +178,7 @@ class AlluvialTool:
             patches = [Polygon(item, facecolor=colors[ind], alpha=alpha) for item in vein_items]
             for patch in patches:
                 ax.add_patch(patch)
-        self.auto_label_veins(**kwargs)
+        # self.auto_label_veins(**kwargs)
         self.label_sides(**kwargs)
         ax.autoscale()
         return ax
