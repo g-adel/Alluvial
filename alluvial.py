@@ -102,11 +102,9 @@ class AlluvialTool:
         _ = kwargs
         
             
-        src_ordered_labels = src_label_override if src_label_override else list(self.input_data_dict.keys())[::-1]
+        src_ordered_labels =  list(self.input_data_dict.keys())
 
-        dst_ordered_labels = dst_label_override if dst_label_override else sorted(
-            {dst_item for dst_item_counter in self.input_data_dict.values() for dst_item in dst_item_counter},
-            key=lambda x: list(self.input_data_dict.values())[0].get(x, float('inf')))
+        dst_ordered_labels =  list(self.input_data_dict[src_ordered_labels[0]].keys())
 
         return src_ordered_labels, dst_ordered_labels
 
