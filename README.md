@@ -7,7 +7,7 @@ To use, call
 ```cmd
 python .\Composite_alluvial.py <Pandas dataframe CSV>
 ```
-where `<Pandas dataframe CSV>` is a Comma-Separated Variables file where the first column are unit ids and the other columns are in a time series of unit categorization. For example:
+where `<Pandas dataframe CSV>` is a Comma-Separated Variables file directory string where the first column are unit ids and the other columns are in a time series of unit categorization or membership. For example:
 ```
 id,T1,T2,T3
 0,1,1,1
