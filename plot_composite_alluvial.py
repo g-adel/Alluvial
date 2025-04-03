@@ -9,8 +9,6 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 
-# _get_all_communities, _setup_gridspec, _get_color_map remain the same as your last version
-
 def _get_all_communities(df, time_cols):
     """Gets sorted list of all unique communities across specified time columns."""
     all_communities = set()
@@ -81,9 +79,7 @@ def _get_color_map(colors, all_communities):
     else: raise TypeError("colors must be a list or dict or None")
 
 
-# <<< REMOVED _plot_identity_column >>>
 
-# <<< HELPER for Identity Matrix >>>
 def _create_identity_matrix(df, time_col, all_communities):
     """Creates a diagonal DataFrame for identity plots based on counts."""
     counts = df[time_col].value_counts()
@@ -95,7 +91,6 @@ def _create_identity_matrix(df, time_col, all_communities):
     return identity_matrix
 
 
-# <<< MODIFIED _plot_intermediate_column >>>
 def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, height_ratios, title, interp_frac, show_titles, show_labels, spacing=0.4):
     """Plots a vertical stack of flow diagrams for intermediate transitions."""
     if not matrices_info:
@@ -105,17 +100,12 @@ def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, heigh
     matrices_info = matrices_info[::-1] # Reverse for bottom-up plotting if desired by gridspec
     height_ratios_safe = height_ratios_safe[::-1]
 
-    try:
-        gs_nested = gridspec.GridSpecFromSubplotSpec(
-            len(matrices_info), 1,
-            subplot_spec=subplot_spec,
-            height_ratios=height_ratios_safe, # Use reversed heights
-            hspace=0.3 # Vertical gap between subplots in the stack
-        )
-    except ValueError as e:
-        print(f"Error creating nested GridSpec for intermediate column '{title}': {e}")
-        ax = fig.add_subplot(subplot_spec); ax.axis('off')
-        ax.text(0.5, 0.5, "Layout Error", color='red', ha='center', va='center'); return [ax]
+    gs_nested = gridspec.GridSpecFromSubplotSpec(
+        len(matrices_info), 1,
+        subplot_spec=subplot_spec,
+        height_ratios=height_ratios_safe, # Use reversed heights
+        hspace=0.3 # Vertical gap between subplots in the stack
+    )
 
     axes_in_column = []
     for j, (label, matrix,layout_info) in enumerate(matrices_info): # Iterate reversed
@@ -125,9 +115,6 @@ def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, heigh
         # Ensure matrix is DataFrame
         matrix_df = pd.DataFrame(matrix)
 
-        # try:
-        # <<< PASS color_map to create_flow_diagram >>>
-        # print(layout_info['colors_out_matrix'][label])
         _, _ = create_flow_diagram(
             matrix_df,
             # color_map=layout_info['colors_out_matrix'][label], # Pass the main color map
@@ -137,11 +124,6 @@ def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, heigh
             v_space=0, # No internal v_space within each small plot
             ax=ax
         )
-        # except Exception as e: # Catch potential errors from create_flow_diagram too
-        #     print(f"Error plotting intermediate matrix for label '{label}': {e}")
-        #     # Optionally print matrix_df.info() or shape for debugging
-        #     ax.text(0.5, 0.5, "Plot Error", color='red', ha='center', va='center')
-        #     ax.axis('off')
 
         if show_labels:
             label_text = f"Via {label}"
@@ -163,7 +145,6 @@ def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, heigh
     return axes_in_column[::-1] # Reverse back if needed
 
 
-# <<< MODIFIED Main plotting function >>>
 def plot_composite_alluvial(df: pd.DataFrame,
                             time_cols: list,
                             direct_trans_matrices: list,
@@ -184,7 +165,7 @@ def plot_composite_alluvial(df: pd.DataFrame,
                            ):
     """ Creates a composite alluvial diagram figure using GridSpec. """
 
-    # --- Input Validation and Setup (mostly same) ---
+    # --- Input Validation and Setup ---
     if not time_cols: raise ValueError("time_cols cannot be empty.")
     n_direct = len(direct_trans_matrices)
     n_inter = len(inter_trans_matrices)
@@ -238,10 +219,6 @@ def plot_composite_alluvial(df: pd.DataFrame,
                 col_pos = id_start_subplot_spec.get_position(fig)
                 title_y_pos = col_pos.y1 + 0.01; title_y_pos = min(title_y_pos, 0.98)
                 fig.text(col_pos.x0 + col_pos.width / 2, title_y_pos, title_text, ha='center', va='bottom', fontsize=10)
-
-        # except Exception as e:
-        #     print(f"Error plotting Identity Start column: {e}")
-        #     ax_id_start.text(0.5, 0.5, "Plot Error", color='red', ha='center', va='center'); ax_id_start.axis('off')
 
     else: print("Skipping Identity Start Plot (not in layout).")
 

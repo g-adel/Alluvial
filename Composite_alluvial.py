@@ -7,7 +7,23 @@ from my_alluvial import *
 from plot_composite_alluvial import *
 from generate_alluvial_matrices import *
 
-def main():
+
+
+def plot_df(df):
+    """
+    Produces a composite alluvial plot out of an inputted csv filename 
+    """
+
+    time_cols = list(df.columns)[1:]
+    direct_trans_matrices, inter_trans_matrices = generate_alluvial_matrices(df,list(df.columns)[1:])
+
+    fig, all_axes = plot_composite_alluvial(df,time_cols,direct_trans_matrices,
+                            inter_trans_matrices, interp_frac=1)
+    plt.show()
+    
+
+if __name__ == "__main__":
+    
     # Default CSV file
     csv_file = 'test_data.csv'
     
@@ -17,16 +33,7 @@ def main():
     
     try:
         df = pd.read_csv(csv_file)
-        print(df)
-        time_cols = list(df.columns)[1:]
-        direct_trans_matrices, inter_trans_matrices, identity_matrices = generate_alluvial_matrices(df,list(df.columns)[1:])
-
-        fig, all_axes = plot_composite_alluvial(df,time_cols,direct_trans_matrices,
-                                inter_trans_matrices, interp_frac=1)
-        plt.show()
+        plot_df(df)
     except FileNotFoundError:
         print(f"Error: Could not find the CSV file '{csv_file}'")
         sys.exit(1)
-
-if __name__ == "__main__":
-    main()

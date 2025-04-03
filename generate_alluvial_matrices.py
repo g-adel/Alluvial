@@ -109,4 +109,4 @@ def generate_alluvial_matrices(df, time_cols):
         end_identity_df = _create_identity_df(df, time_cols[-1], all_communities)
         identity_matrices.append(('end', end_identity_df))
 
-    return direct_trans_matrices, inter_trans_matrices, identity_matrices
+    return direct_trans_matrices, inter_trans_matrices
