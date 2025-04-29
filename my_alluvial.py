@@ -207,7 +207,7 @@ def create_flow_diagram(matrix_in, # Should be DataFrame
                     color2=colors_in[i],
                     # color2=colors_out_mat[row_label, col_label],
                     ax=ax,
-                    edgecolor='grey'
+                    edgecolor='none'
                 )
 
                 src_offsets[i] += flow_width
