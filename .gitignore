@@ -1,3 +1,4 @@
 *.png
 *.zip
 *.pyc
+__pycache__/generate_alluvial_matrices.cpython-313.pyc
