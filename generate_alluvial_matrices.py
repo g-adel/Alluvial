@@ -123,7 +123,7 @@ def _get_communities_for_transition(df, start_year_col, start_comm_col, end_year
     target_communities = sorted(list(transition_df[end_comm_col].dropna().unique()))
     return source_communities, target_communities
 
-def generate_alluvial_matrices_from_edgelists(direct_edgelist_df, intermediate_edgelist_df):
+def generate_alluvial_matrices_from_edgelists(direct_edgelist_df, intermediate_edgelist_df=None):
     """
     Generates direct, intermediate, and identity transition matrices (DataFrames)
     for alluvial plots from weighted edgelists. Handles changing community sets.
@@ -174,8 +174,7 @@ def generate_alluvial_matrices_from_edgelists(direct_edgelist_df, intermediate_e
         trans_df = direct_edgelist_df[
             (direct_edgelist_df['origin_year'] == t_start) &
             (direct_edgelist_df['destination_year'] == t_end)
-        ].copy() # Use copy to avoid SettingWithCopyWarning if modifying later
-
+        ].copy()
         if trans_df.empty:
             # Handle cases where no direct transition exists between these years
             # Decide how to represent this: empty dataframe, or dataframe of zeros?

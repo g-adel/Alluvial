@@ -51,12 +51,12 @@ def _get_all_communities_from_matrices(direct_mats, inter_mats):
         if isinstance(mat, pd.DataFrame):
             all_communities_set.update(mat.index.unique())
             all_communities_set.update(mat.columns.unique())
-
-    for step_list in inter_mats:
-        for _, matrix in step_list:
-             if isinstance(matrix, pd.DataFrame):
-                all_communities_set.update(matrix.index.unique())
-                all_communities_set.update(matrix.columns.unique())
+    if inter_mats is not None:
+        for step_list in inter_mats:
+            for _, matrix in step_list:
+                if isinstance(matrix, pd.DataFrame):
+                    all_communities_set.update(matrix.index.unique())
+                    all_communities_set.update(matrix.columns.unique())
 
     return _sort_communities(all_communities_set)
 
@@ -199,7 +199,7 @@ def _plot_intermediate_column(fig, subplot_spec, matrices_info, color_map, heigh
 
 
 def plot_composite_alluvial(direct_trans_matrices: list,
-                            inter_trans_matrices: list,
+                            inter_trans_matrices: list=None,
                             colors=None,
                             figsize=(16, 8),
                             direct_plot_width_ratio=2.5,
@@ -234,16 +234,16 @@ def plot_composite_alluvial(direct_trans_matrices: list,
 
     # --- Input Validation and Setup ---
     n_direct = len(direct_trans_matrices)
-    n_inter = len(inter_trans_matrices)
+    n_inter = 0 if inter_trans_matrices is None else len(inter_trans_matrices)
     n_identity = 2 if n_direct > 0 else 0 # Need start/end identity only if transitions exist
-
-    if n_direct > 0 and n_direct <= 1 and n_inter != 0:
-        print(f"Warning: Intermediate matrices provided but <= 1 direct matrices. Ignoring intermediates.")
-        n_inter = 0
-    elif n_direct > 1 and n_inter != n_direct - 1:
-        print(f"Warning: Number of intermediate matrices ({n_inter}) != expected ({n_direct - 1}). Plotting may be misaligned.")
-        # Adjust n_inter to match available data if desired, or proceed cautiously.
-        n_inter = min(n_inter, n_direct -1) # Limit intermediates to available slots
+    if inter_trans_matrices is not None:
+        if n_direct > 0 and n_direct <= 1 and n_inter != 0:
+            print(f"Warning: Intermediate matrices provided but <= 1 direct matrices. Ignoring intermediates.")
+            n_inter = 0
+        elif n_direct > 1 and n_inter != n_direct - 1:
+            print(f"Warning: Number of intermediate matrices ({n_inter}) != expected ({n_direct - 1}). Plotting may be misaligned.")
+            # Adjust n_inter to match available data if desired, or proceed cautiously.
+            n_inter = min(n_inter, n_direct -1) # Limit intermediates to available slots
 
     all_communities = _get_all_communities_from_matrices(direct_trans_matrices, inter_trans_matrices)
     if not all_communities:
@@ -360,50 +360,51 @@ def plot_composite_alluvial(direct_trans_matrices: list,
 
 
         # --- Plot Intermediate Column T_i -> T_{i+2} via T_{i+1} ---
-        if i < n_inter: # Check if an intermediate plot should exist for this step
-            if i < len(plot_indices.get('inter', [])): # Check if layout includes space
-                inter_col_idx = plot_indices['inter'][i]
-                inter_subplot_spec = gs_main[0, inter_col_idx]
-                intermediate_set = inter_trans_matrices[i] # List of (comm, matrix_df)
-                title_text = f"Transition {i+1} \u2192 {i+3}" # Unicode right arrow
+        if inter_trans_matrices is not None:
+            if i < n_inter : # Check if an intermediate plot should exist for this step
+                if i < len(plot_indices.get('inter', [])): # Check if layout includes space
+                    inter_col_idx = plot_indices['inter'][i]
+                    inter_subplot_spec = gs_main[0, inter_col_idx]
+                    intermediate_set = inter_trans_matrices[i] # List of (comm, matrix_df)
+                    title_text = f"Transition {i+1} \u2192 {i+3}" # Unicode right arrow
 
-                height_ratios = []
-                valid_intermediate_set = []
-                # Sort intermediate paths based on the global community order
-                intermediate_set_sorted = sorted(intermediate_set, key=lambda x: comm_order_map.get(x[0], float('inf')))
-                total_incoming_flow = target_comms_series.sum() # Total flow arriving at T_{i+1}
+                    height_ratios = []
+                    valid_intermediate_set = []
+                    # Sort intermediate paths based on the global community order
+                    intermediate_set_sorted = sorted(intermediate_set, key=lambda x: comm_order_map.get(x[0], float('inf')))
+                    total_incoming_flow = target_comms_series.sum() # Total flow arriving at T_{i+1}
 
-                for comm, matrix_df_in in intermediate_set_sorted:
-                    # Ensure matrix_df_in is a DataFrame
-                    if not isinstance(matrix_df_in, pd.DataFrame):
-                        print(f"Warning: Intermediate matrix for community {comm} in step {i} is not a DataFrame. Skipping.")
-                        continue
-                    matrix_df = matrix_df_in
+                    for comm, matrix_df_in in intermediate_set_sorted:
+                        # Ensure matrix_df_in is a DataFrame
+                        if not isinstance(matrix_df_in, pd.DataFrame):
+                            print(f"Warning: Intermediate matrix for community {comm} in step {i} is not a DataFrame. Skipping.")
+                            continue
+                        matrix_df = matrix_df_in
 
-                    # Ensure matrix uses all known communities
-                    matrix_df = matrix_df.reindex(index=all_communities, columns=all_communities, fill_value=0.0)
+                        # Ensure matrix uses all known communities
+                        matrix_df = matrix_df.reindex(index=all_communities, columns=all_communities, fill_value=0.0)
 
-                    # Flow into the intermediate community (comm) at T_{i+1}
-                    flow_into_comm = target_comms_series.get(comm, 0)
-                    relative_flow_into = flow_into_comm / total_incoming_flow if total_incoming_flow > 1e-9 else 0
+                        # Flow into the intermediate community (comm) at T_{i+1}
+                        flow_into_comm = target_comms_series.get(comm, 0)
+                        relative_flow_into = flow_into_comm / total_incoming_flow if total_incoming_flow > 1e-9 else 0
 
-                    # Check if this path has significant flow *into* it and *through* it
-                    if relative_flow_into >= min_flow_for_ratio and not matrix_df.empty and matrix_df.sum().sum() > 1e-9:
-                        height_ratios.append(flow_into_comm) # Height based on flow *into* the intermediate node
-                        valid_intermediate_set.append((comm, matrix_df))
+                        # Check if this path has significant flow *into* it and *through* it
+                        if relative_flow_into >= min_flow_for_ratio and not matrix_df.empty and matrix_df.sum().sum() > 1e-9:
+                            height_ratios.append(flow_into_comm) # Height based on flow *into* the intermediate node
+                            valid_intermediate_set.append((comm, matrix_df))
 
-                if valid_intermediate_set:
-                    inter_axes = _plot_intermediate_column(fig, inter_subplot_spec, valid_intermediate_set, color_map, height_ratios, title_text, interp_frac, show_titles, show_labels, spacing=0.05)
-                    all_axes.extend(inter_axes)
-                else: # If no valid intermediate flows for this step, add dummy axis
-                    ax = fig.add_subplot(inter_subplot_spec); ax.axis('off'); all_axes.append(ax)
-                    if show_titles:
-                         col_pos = inter_subplot_spec.get_position(fig)
-                         title_y_pos = min(col_pos.y1 + 0.01, 0.98)
-                         fig.text(col_pos.x0 + col_pos.width / 2, title_y_pos, title_text, ha='center', va='bottom', fontsize=10)
-                    print(f"No valid intermediate flows >= {min_flow_for_ratio*100:.1f}% for {title_text}, column left blank.")
-            else:
-                print(f"Warning: Skipping intermediate plot {i}, index out of bounds in plot layout.")
+                    if valid_intermediate_set:
+                        inter_axes = _plot_intermediate_column(fig, inter_subplot_spec, valid_intermediate_set, color_map, height_ratios, title_text, interp_frac, show_titles, show_labels, spacing=0.05)
+                        all_axes.extend(inter_axes)
+                    else: # If no valid intermediate flows for this step, add dummy axis
+                        ax = fig.add_subplot(inter_subplot_spec); ax.axis('off'); all_axes.append(ax)
+                        if show_titles:
+                            col_pos = inter_subplot_spec.get_position(fig)
+                            title_y_pos = min(col_pos.y1 + 0.01, 0.98)
+                            fig.text(col_pos.x0 + col_pos.width / 2, title_y_pos, title_text, ha='center', va='bottom', fontsize=10)
+                        print(f"No valid intermediate flows >= {min_flow_for_ratio*100:.1f}% for {title_text}, column left blank.")
+                else:
+                    print(f"Warning: Skipping intermediate plot {i}, index out of bounds in plot layout.")
 
     # --- Plot Identity End Column ---
     if len(plot_indices.get('identity', [])) > 1:
